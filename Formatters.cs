@@ -1,6 +1,6 @@
 namespace Cercis
 {
-    internal class Formatters
+    class Formatters
     {
         public class TreeNode
         {
