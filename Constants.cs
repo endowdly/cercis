@@ -1,6 +1,13 @@
 namespace Cercis
 { 
-    internal class Literal
+    class Messages
+    {
+        public class TreeNode
+        {
+            public const string UnknownIOException = "IO Exception Occurred! Source: {0}";
+        }
+    }
+    class Literal
     {
         public const char Space = ' ';
         public const char EscapeCharacter = (char)0x1b;
@@ -8,7 +15,7 @@ namespace Cercis
 
     }
 
-    internal class AnsiCommand
+    class AnsiCommand
     {
         public static readonly string Start =
             Literal.EscapeCharacter.ToString()

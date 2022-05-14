@@ -26,7 +26,7 @@ namespace Cercis
             return friendlyStrings[x];
         }
 
-        public static UnitPrefix PrettyUnit(long bytes)
+        public static UnitPrefix PrettyUnit(ulong bytes)
         {
             return bytes > 1000000000
                 ? UnitPrefix.Giga
@@ -37,7 +37,7 @@ namespace Cercis
                         : UnitPrefix.None;
         }
 
-        public static double Convert(long n, UnitPrefix from, UnitPrefix to)
+        public static double Convert(ulong n, UnitPrefix from, UnitPrefix to)
         {
             double result;
             double nSteps;
