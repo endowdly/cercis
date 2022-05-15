@@ -9,7 +9,7 @@ namespace Cercis
 
         public FileTree(
             string dir,
-            IEnumerable<string> ps,
+            string s,
             SortType st,
             ulong n
         )
@@ -17,10 +17,14 @@ namespace Cercis
             if (!Directory.Exists(dir))
                 throw new DirectoryNotFoundException(string.Format(Messages.FileTree.NotADir, dir));
 
+            var ps = string.IsNullOrWhiteSpace(s)
+                ? Array.Empty<string>()
+                : s.Split(",").Select(x => x.Trim());
+ 
             rootNode = new TreeNode(
                 dir,
                 FileType.Dir,
-                Literal.Period,
+                new DirectoryInfo(dir).Name,
                 ps,
                 st,
                 0); 
@@ -42,12 +46,24 @@ namespace Cercis
             if (node.Generation >= depth)
                 return;
 
+            if (!node.EnumerateChildren().Any())
+                return;    
+
             string prefix;
             string dirPrefix;
+            TreeNode lastChild;
+            IEnumerable<TreeNode> children; 
 
-            var iterChildren = node.EnumerateChildren();
-            var lastChild = iterChildren.Last();
-            var children = iterChildren.SkipLast(1);
+            if (node.EnumerateChildren().Count() > 1)
+            {
+                lastChild = node.EnumerateChildren().Last(); 
+                children = node.EnumerateChildren().SkipLast(1);
+            }
+            else 
+            {
+                lastChild = node.EnumerateChildren().First();
+                children = Array.Empty<TreeNode>();
+            } 
 
             foreach (var child in children)
             {
@@ -71,27 +87,24 @@ namespace Cercis
                 }
             }
 
-            if (lastChild != null)
+            prefix = string.Format(
+                Formatters.FileTree.SprintBranchesLastChildPrefix,
+                basePrefix,
+                Literal.BranchSep
+            );
+
+            SprintRow(lastChild, prefix, ref sb);
+
+            if (lastChild.IsDir)
             {
-                prefix = string.Format(
-                    Formatters.FileTree.SprintBranchesLastChildPrefix,
+                dirPrefix = string.Format(
+                    Formatters.FileTree.SprintBranchesLastChildDirPrefix,
                     basePrefix,
                     Literal.BranchSep
                 );
 
-                SprintRow(lastChild, prefix, ref sb);
-
-                if (lastChild.IsDir)
-                {
-                    dirPrefix = string.Format(
-                        Formatters.FileTree.SprintBranchesLastChildDirPrefix,
-                        basePrefix,
-                        Literal.BranchSep
-                    );
-
-                    SprintBranches(lastChild, dirPrefix, depth, ref sb);
-                }
-            } 
+                SprintBranches(lastChild, dirPrefix, depth, ref sb);
+            }
         }
 
         public void Display()
