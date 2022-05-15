@@ -15,15 +15,22 @@ namespace Cercis
     { 
         public static string GetDescription(this UnitPrefix x)
         {
+
             var friendlyStrings = new Dictionary<UnitPrefix, string>
+
             {
                 { UnitPrefix.Kilo, "KB" },
                 { UnitPrefix.Mega, "MB" },
                 { UnitPrefix.Giga, "GB" },
                 { UnitPrefix.None, "B" },
-            }; 
+            };
 
-            return friendlyStrings[x];
+            if (friendlyStrings.TryGetValue(x, out string? value))
+            {
+                return value;
+            }
+
+            return "?";
         }
 
         public static UnitPrefix PrettyUnit(ulong bytes)
@@ -45,9 +52,9 @@ namespace Cercis
             nSteps = from - to;
 
             if (nSteps == 0)
-                return (double)n;
+                return n;
 
-            result = (double)n;
+            result = n;
 
             if (nSteps > 0)
             {

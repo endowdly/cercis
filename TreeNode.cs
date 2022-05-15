@@ -41,7 +41,7 @@ namespace Cercis
             sortType = st;
             children = Array.Empty<TreeNode>();
 
-            if (IsDir(loc))
+            if (IsDir)
             {
                 try
                 {
@@ -68,6 +68,11 @@ namespace Cercis
             }
         }
 
+        public ulong Generation => gen;
+
+        public bool IsDir =>
+            (File.GetAttributes(location) & FileAttributes.Directory) == FileAttributes.Directory;
+
         public string Length
         {
             get
@@ -86,6 +91,14 @@ namespace Cercis
             fileType == FileType.Dir
                     ? string.Format(Formatters.TreeNode.FormatFileName, fileName)
                     : fileName;
+
+        public IEnumerable<TreeNode> EnumerateChildren()
+        {
+            foreach (var c in children)
+            {
+                yield return c;
+            }
+        }
 
         // sprintf_len
         static FileType AscertainFileType(string entry)
@@ -107,11 +120,6 @@ namespace Cercis
             return fi.Exists
                 ? (ulong)fi.Length
                 : 0ul;
-        }
-
-        static bool IsDir(string path)
-        {
-            return (File.GetAttributes(path) & FileAttributes.Directory) == FileAttributes.Directory;
         }
 
         static bool IsSymLink(string path)
