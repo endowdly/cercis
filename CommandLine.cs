@@ -20,7 +20,7 @@ namespace Cercis
     {
         public string? Directory;
         public ulong? Depth;
-        public IEnumerable<string>? Prefixes;
+        public string? Prefixes;
         public SortType? SortType;
     }
 
@@ -75,18 +75,27 @@ namespace Cercis
             {
                 ValidateArg(s);
 
-                cliArgs.Prefixes = s.Split(",", StringSplitOptions.TrimEntries);
+                cliArgs.Prefixes = s;
                 state = CommandLineOption.None;
             }
 
             void DoSort(string s)
             {
                 ValidateArg(s);
+                
+                var map = new Dictionary<string, SortType>()
+                {
+                    { "asc", SortType.Ascending },
+                    { "desc", SortType.Descending }, 
+                };
 
-                if (s != "asc" || s != "desc")
+                if (!map.TryGetValue(s, out SortType st)) 
+                { 
                     throw new ArgumentException("-s must be <asc|desc>.");
+                }
+                
 
-                cliArgs.SortType = GetSortTypeFromArg(s);
+                cliArgs.SortType = st;
                 state = CommandLineOption.None;
             }
 
@@ -123,7 +132,6 @@ namespace Cercis
                 { "-l", CommandLineOption.Depth },
                 { "-p", CommandLineOption.Patterns },
                 { "-s", CommandLineOption.Sort },
-                { "", CommandLineOption.None } 
             };
             
             if (map.TryGetValue(flag, out CommandLineOption value))
@@ -146,14 +154,6 @@ namespace Cercis
         {
             return Path.GetDirectoryName(arg) ?? throw new DirectoryNotFoundException();
         }
-        
-        static SortType GetSortTypeFromArg(string arg)
-        {
-            if (arg == "asc")
-                return SortType.Ascending;
-
-            return SortType.Descending;
-        } 
 
         static void ValidateArg(string arg)
         {

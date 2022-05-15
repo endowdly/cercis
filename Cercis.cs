@@ -4,28 +4,24 @@ namespace Cercis
     { 
         static void Main(string[] args)
         { 
+            if (args.Contains("-h"))
+            {
+                Console.WriteLine(Messages.CommandLine.Help);
+                return;
+            }
+
             ulong depth;
             string dir;
+            string pre;
             CommandLineArgs cliArgs;
-            IEnumerable<string> pre;
-            SortType sort;
+            SortType sort; 
             
-            if (args.Length <= 1)
-            {
-                var ft = new FileTree();
-
-                ft.Display();
-                return;
-            } 
-            else
-            {
-                args = args.Skip(1).ToArray(); 
-                cliArgs = CommandLine.ParseArgs(args); 
-                dir = cliArgs.Directory ?? Directory.GetCurrentDirectory();
-                pre = cliArgs.Prefixes ?? Array.Empty<string>();
-                sort = cliArgs.SortType ?? SortType.None;
-                depth = cliArgs.Depth ?? ulong.MaxValue;
-            }
+            args = args.ToArray(); 
+            cliArgs = CommandLine.ParseArgs(args); 
+            dir = cliArgs.Directory ?? Directory.GetCurrentDirectory();
+            pre = cliArgs.Prefixes ?? string.Empty;
+            sort = cliArgs.SortType ?? SortType.None;
+            depth = cliArgs.Depth ?? ulong.MaxValue;
 
             new FileTree(dir, pre, sort, depth).Display(); 
         } 

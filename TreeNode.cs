@@ -31,7 +31,8 @@ namespace Cercis
             string fn,
             IEnumerable<string> ps,
             SortType st,
-            ulong n)
+            ulong n
+        )
         {
 
             location = loc;
@@ -143,7 +144,6 @@ namespace Cercis
 
             var fses = Directory.EnumerateFileSystemEntries(location);
 
-            entries:
             foreach (var fse in fses)
             {
                 if (string.IsNullOrWhiteSpace(fse))
@@ -154,27 +154,24 @@ namespace Cercis
                 if (fType == FileType.Unknown)
                     continue;
 
+                fName = fType == FileType.Dir
+                    ? new DirectoryInfo(fse).Name
+                    : new FileInfo(fse).Name;
+
                 foreach (var p in ps)
                 {
-                    if (string.IsNullOrWhiteSpace(p))
-                        continue;
-
-                    if (fType == FileType.Dir)
-                    {
-                        if (Path.GetDirectoryName(fse)!.StartsWith(p))
-                            goto entries;
-                    }
-                }
-
-                fName = fType == FileType.Dir
-                    ? Path.GetDirectoryName(fse)!
-                    : Path.GetFileName(fse)!;
+                    if (fType == FileType.Dir && fName.StartsWith(p))
+                        goto skip;
+                } 
 
                 var newNode = new TreeNode(fse, fType, fName, ps, sortType, gen + 1);
 
                 len += newNode.len;
 
                 AddChild(newNode);
+
+                skip:
+                    continue;
             }
 
             if (sortType != SortType.None)
