@@ -1,39 +1,38 @@
 namespace Cercis
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
     using System.Text;
-    struct FileTree
+
+    class FileTree
     {
         readonly ulong depth;
-        readonly string root;
         readonly TreeNode rootNode;
 
         public FileTree(
-            string dir,
-            string s,
-            SortType st,
-            ulong n
+            string rootPath,
+            string ignoredPrefixes,
+            SortType sortType,
+            ulong maxDepth
         )
         {
-            if (!Directory.Exists(dir))
-                throw new DirectoryNotFoundException(string.Format(Messages.FileTree.NotADir, dir));
+            if (!Directory.Exists(rootPath))
+                throw new DirectoryNotFoundException(string.Format(Messages.FileTree.NotADir, rootPath));
 
-            var ps = string.IsNullOrWhiteSpace(s)
-                ? Array.Empty<string>()
-                : s.Split(",").Select(x => x.Trim());
+            var ps = string.IsNullOrWhiteSpace(ignoredPrefixes)
+                ? new string[0] 
+                : ignoredPrefixes.Split(Literal.Comma).Select(x => x.Trim());
  
             rootNode = new TreeNode(
-                dir,
-                FileType.Dir,
-                new DirectoryInfo(dir).Name,
+                rootPath,
                 ps,
-                st,
+                sortType,
                 0); 
 
-            root = dir;
-            depth = n;
+            depth = maxDepth;
         }
-
-        public string Root => Path.GetFullPath(root);
 
         static void SprintRow(TreeNode node, string prefix, ref StringBuilder sb)
         {
@@ -41,9 +40,10 @@ namespace Cercis
 
             sb.Append(fmtRow); 
         }
-        void SprintBranches(TreeNode node, string basePrefix, ulong depth, ref StringBuilder sb)
+
+        static void SprintBranches(TreeNode node, string basePrefix, ulong depth, ref StringBuilder sb)
         {
-            if (node.Generation >= depth)
+            if (node.gen >= depth)
                 return;
 
             if (!node.EnumerateChildren().Any())
@@ -57,12 +57,12 @@ namespace Cercis
             if (node.EnumerateChildren().Count() > 1)
             {
                 lastChild = node.EnumerateChildren().Last(); 
-                children = node.EnumerateChildren().SkipLast(1);
+                children = node.EnumerateChildren().TakeWhile(child => child != lastChild);
             }
             else 
             {
                 lastChild = node.EnumerateChildren().First();
-                children = Array.Empty<TreeNode>();
+                children = new TreeNode[0];
             } 
 
             foreach (var child in children)
@@ -75,7 +75,7 @@ namespace Cercis
 
                 SprintRow(child, prefix, ref sb); 
 
-                if (child.IsDir)
+                if (Directory.Exists(child.location))
                 { 
                     dirPrefix = string.Format(
                         Formatters.FileTree.SprintBranchesDirPrefix,
@@ -95,7 +95,7 @@ namespace Cercis
 
             SprintRow(lastChild, prefix, ref sb);
 
-            if (lastChild.IsDir)
+            if (Directory.Exists(lastChild.location))
             {
                 dirPrefix = string.Format(
                     Formatters.FileTree.SprintBranchesLastChildDirPrefix,

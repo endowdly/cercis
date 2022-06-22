@@ -2,7 +2,23 @@ namespace Cercis
 {
     class Formatters
     {
+        class AnsiCommand
+        {
+            public static readonly string Start =
+                Literal.EscapeCharacter.ToString()
+                    + Literal.LeftBracketCharacter.ToString();
+            public static readonly string Stop =
+                Literal.EscapeCharacter.ToString()
+                    + Literal.LeftBracketCharacter.ToString()
+                    + "0m";
+
+            public const string Red = "1;31m";
+            public const string DarkCyan = "36m";
+        }        
+
         public class FileTree
+
+
         {
             public const string SprintRow = "{0}{1} ({2})\n";
 

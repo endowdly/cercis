@@ -1,6 +1,11 @@
 namespace Cercis
 {
 
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.IO;
+
     enum CommandLineOption
     {
         None,
@@ -18,22 +23,26 @@ namespace Cercis
 
     struct CommandLineArgs
     {
-        public string? Directory;
-        public ulong? Depth;
-        public string? Prefixes;
-        public SortType? SortType;
+        public string Directory;
+        public ulong Depth;
+        public string Prefixes;
+        public SortType SortType;
     }
 
     static class CommandLine
     {
         public static CommandLineArgs ParseArgs(IEnumerable<string> args)
         {
-            var cliArgs = new CommandLineArgs();
+            var clargs = new CommandLineArgs
+            {
+                Directory = null,
+                Depth = ulong.MaxValue,
+                Prefixes = string.Empty,
+                SortType = SortType.None
+            };
 
             if (!args.Any())
-                return cliArgs;
-
-            // Move help to Main
+                return clargs;
 
             var state = CommandLineOption.None;
             var first = args.First();
@@ -43,98 +52,90 @@ namespace Cercis
             if (firstArgType == CommandLineArgType.Positional)
             {
                 var dir = GetDirectoryFromArg(first);
-                cliArgs.Directory = dir;
+                clargs.Directory = dir;
             }
             else 
             {
-                var opt = GetOption(first);
-                
-                if (opt == CommandLineOption.None)
-                    throw BadOption(first);
+                var _ = GetOption(first);
             }
 
-            void DoNone(string s)
+            Action<string> none = s => 
             {
-                var opt = GetOption(s);
-
-                if (opt == CommandLineOption.None)
-                    throw BadOption(s);
-                else
-                    state = opt;
-            }
-
-            void DoDepth(string s)
+                state = GetOption(s);
+            };
+            Action<string> depth = s =>
             {
                 ValidateArg(s);
-
-                cliArgs.Depth = GetDepthFromArg(s);
+                clargs.Depth = GetDepthFromArg(s);
                 state = CommandLineOption.None;
-            }
-
-            void DoPatterns(string s)
+            };
+            Action<string> patterns = s =>
             {
-                ValidateArg(s);
-
-                cliArgs.Prefixes = s;
+                ValidateArg(s); 
+                clargs.Prefixes = s;
                 state = CommandLineOption.None;
-            }
-
-            void DoSort(string s)
+            };
+            Action<string> sort = s =>
             {
-                ValidateArg(s);
-                
+                SortType st;
+
+                ValidateArg(s); 
                 var map = new Dictionary<string, SortType>()
                 {
                     { "asc", SortType.Ascending },
                     { "desc", SortType.Descending }, 
-                };
+                }; 
 
-                if (!map.TryGetValue(s, out SortType st)) 
+                if (!map.TryGetValue(s, out st)) 
                 { 
-                    throw new ArgumentException("-s must be <asc|desc>.");
-                }
-                
+                    throw new ArgumentException("SortType must be 'asc' or 'desc'.");
+                } 
 
-                cliArgs.SortType = st;
+                clargs.SortType = st;
                 state = CommandLineOption.None;
-            }
+            };
 
             var stateMap = new Dictionary<CommandLineOption, Action<string>>()
             {
-                { CommandLineOption.None, DoNone },
-                { CommandLineOption.Depth, DoDepth },
-                { CommandLineOption.Patterns, DoPatterns },
-                { CommandLineOption.Sort, DoSort }, 
+                { CommandLineOption.None, none},
+                { CommandLineOption.Depth, depth },
+                { CommandLineOption.Patterns, patterns },
+                { CommandLineOption.Sort, sort }, 
             }; 
 
             foreach (var arg in rest)
             {
-                var action = stateMap[state];
-
-                action.Invoke(arg); 
+                stateMap[state].Invoke(arg); 
             }
 
-            return cliArgs;
+            return clargs;
         }
 
         static ulong GetDepthFromArg(string s)
         { 
-            if (!ulong.TryParse(s, out ulong result))
-                return 0;
+            ulong result;
 
-            return result;
+            if (ulong.TryParse(s, out result))
+                return result;
+
+            return 0;
         }
 
         static CommandLineOption GetOption(string flag)
         {
+            CommandLineOption value; 
+
             var map = new Dictionary<string, CommandLineOption>()
             {
                 { "-l", CommandLineOption.Depth },
                 { "-p", CommandLineOption.Patterns },
-                { "-s", CommandLineOption.Sort },
-            };
+                { "-s", CommandLineOption.Sort }, 
+                { "--depth", CommandLineOption.Depth },
+                { "--ignore-patterns", CommandLineOption.Patterns },
+                { "--sort", CommandLineOption.Sort },
+            }; 
             
-            if (map.TryGetValue(flag, out CommandLineOption value))
+            if (map.TryGetValue(flag, out value))
             {
                 return value;
             } 
@@ -144,22 +145,24 @@ namespace Cercis
         
         static CommandLineArgType GetArgType(string arg)
         {
-            if (arg.StartsWith("-"))
-                return CommandLineArgType.Optional;
-
-            return CommandLineArgType.Positional;
+            return arg.StartsWith("-") || arg.StartsWith("--")
+                ? CommandLineArgType.Optional
+                : CommandLineArgType.Positional;
         }
 
         static string GetDirectoryFromArg(string arg)
         {
-            return Path.GetDirectoryName(arg) ?? throw new DirectoryNotFoundException();
+            if (string.IsNullOrEmpty(Path.GetDirectoryName(arg)))
+                throw new DirectoryNotFoundException();
+
+            return Path.GetDirectoryName(arg);
         }
 
         static void ValidateArg(string arg)
         {
-            var ss = new string[] { "-s", "-l", "-p" };
+            string[] strings = { "-s", "-l", "-p", "--depth", "--ignore-patterns", "--sort" };
 
-            if (ss.Contains(arg))
+            if (strings.Contains(arg))
                 throw new ArgumentException("Malformed command line arguments."); 
         }
 

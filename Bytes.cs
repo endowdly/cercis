@@ -11,13 +11,13 @@ namespace Cercis
         Giga = 0,
     }
 
-    internal static class Bytes
+    static class Bytes
     { 
         public static string GetDescription(this UnitPrefix x)
         {
-
+            string value;
+            
             var friendlyStrings = new Dictionary<UnitPrefix, string>
-
             {
                 { UnitPrefix.Kilo, "KB" },
                 { UnitPrefix.Mega, "MB" },
@@ -25,7 +25,7 @@ namespace Cercis
                 { UnitPrefix.None, "B" },
             };
 
-            if (friendlyStrings.TryGetValue(x, out string? value))
+            if (friendlyStrings.TryGetValue(x, out value))
             {
                 return value;
             }

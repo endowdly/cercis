@@ -5,75 +5,68 @@ namespace Cercis
     using System.IO;
     using System.Linq;
 
-    enum FileType
+    enum FileType 
     {
-        Unknown,
+        None,
         File,
-        Dir,
-        Symlink
+        Dir, 
+        SymLink
     }
 
-    // Note: would like to keep this as a struct for speed
-    // But it is self-referencing, even in the rust impl. 
+    enum SortType
+    {
+        None,
+        Ascending,
+        Descending 
+    }
+
     class TreeNode
     {
         ulong len;
-        readonly ulong gen;
-        readonly string location;
-        readonly string fileName;
-        readonly FileType fileType;
+        readonly string name;
         readonly SortType sortType;
-        TreeNode[] children;
+        Stack<TreeNode> children;
+        public readonly ulong gen;
+        public readonly string location;
 
         public TreeNode(
             string loc,
-            FileType ft,
-            string fn,
             IEnumerable<string> ps,
             SortType st,
             ulong n
         )
-        {
-
+        { 
             location = loc;
-            fileType = ft;
-            fileName = fn;
             gen = n;
             sortType = st;
-            children = Array.Empty<TreeNode>();
+            children = new Stack<TreeNode>();
 
-            if (IsDir)
+            if (Directory.Exists(loc))
             {
                 try
                 {
+                    name = new DirectoryInfo(loc).Name;
+
                     ConstructBranches(ps);
                 }
                 catch (UnauthorizedAccessException)
                 {
                     return;
                 }
-                catch (IOException e)
+                catch (IOException ex)
                 {
-                    Console.WriteLine(Messages.TreeNode.UnknownIOException, e.Source ?? string.Empty);
-                }
-                catch (ArgumentException e)
-                {
-                    throw e;
-                }
+                    Console.WriteLine(Messages.TreeNode.UnknownIOException, ex.Source ?? string.Empty);
+                } 
             }
             else
             {
+                name = new FileInfo(loc).Name;
                 len = IsSymLink(loc)
                     ? 0ul
                     : GetFileLength(loc);
             }
         }
-
-        public ulong Generation => gen;
-
-        public bool IsDir =>
-            (File.GetAttributes(location) & FileAttributes.Directory) == FileAttributes.Directory;
-
+        
         public string Length
         {
             get
@@ -88,10 +81,15 @@ namespace Cercis
         }
 
         // sprintf_file_name
-        public string Name =>
-            fileType == FileType.Dir
-                    ? string.Format(Formatters.TreeNode.FormatFileName, fileName)
-                    : fileName;
+        public string Name 
+        {
+            get
+            {
+                return Directory.Exists(location)
+                    ? string.Format(Formatters.TreeNode.FormatFileName, name)
+                    : name;
+            }
+        }
 
         public IEnumerable<TreeNode> EnumerateChildren()
         {
@@ -102,16 +100,16 @@ namespace Cercis
         }
 
         // sprintf_len
-        static FileType AscertainFileType(string entry)
+        static FileType GetFileType(string entry)
         {
             if (IsSymLink(entry))
-                return FileType.Symlink;
+                return FileType.SymLink;
 
             return File.Exists(entry)
                 ? FileType.File
                 : Directory.Exists(entry)
                     ? FileType.Dir
-                    : FileType.Unknown;
+                    : FileType.None;
         }
 
         static ulong GetFileLength(string path)
@@ -119,7 +117,7 @@ namespace Cercis
             var fi = new FileInfo(path);
 
             return fi.Exists
-                ? (ulong)fi.Length
+                ? (ulong) fi.Length
                 : 0ul;
         }
 
@@ -129,12 +127,8 @@ namespace Cercis
         }
 
         void AddChild(TreeNode child)
-        {
-            var xs = new Stack<TreeNode>(children);
-
-            xs.Push(child);
-
-            children = xs.ToArray();
+        { 
+            children.Push(child); 
         }
 
         void ConstructBranches(IEnumerable<string> ps)
@@ -149,9 +143,9 @@ namespace Cercis
                 if (string.IsNullOrWhiteSpace(fse))
                     continue;
 
-                fType = AscertainFileType(fse);
+                fType = GetFileType(fse);
 
-                if (fType == FileType.Unknown)
+                if (fType == FileType.None)
                     continue;
 
                 fName = fType == FileType.Dir
@@ -164,7 +158,7 @@ namespace Cercis
                         goto skip;
                 } 
 
-                var newNode = new TreeNode(fse, fType, fName, ps, sortType, gen + 1);
+                var newNode = new TreeNode(fse, ps, sortType, gen + 1);
 
                 len += newNode.len;
 
@@ -180,12 +174,11 @@ namespace Cercis
 
         void SortChildren()
         {
-            var xs = new List<TreeNode>(children);
-            var ys = sortType == SortType.Ascending
-                ? xs.OrderBy(child => child.len).ToList()
-                : xs.OrderByDescending(child => child.len).ToList();
+            var xs = sortType == SortType.Ascending
+                ? children.OrderBy(child => child.len)
+                : children.OrderByDescending(child => child.len);
 
-            children = ys.ToArray();
+            children = new Stack<TreeNode>(xs);
         }
     }
 }

@@ -34,11 +34,16 @@ This is lame, remember?
 Snag a dotnet SDK, version 6.0.23 or higher.
 Clone this repo and run `dotnet build`.
 It has no dependencies, so, it should be quick.
-The debug executable will run natively on Windows.
 
-Use `dotnet publish -r <your runtime> --self-contained` if you are on another system.
+You can then run `dotnet run`.
 
-See the [Runtime Catalog](https://docs.microsoft.com/en-us/dotnet/core/rid-catalog) for more information on your runtimes.
+### Toolless
+
+If you are running a Windows 10 machine and don't want to use `dotnet`, then simply clone this repo and run the `build.cmd` file.
+An executable binary will compile to `out`, which you can then manually add to your path.
+
+Every Windows 10 build comes with its own csharp compiler. 
+This project packages an old script w/response file setup I used to build medium-complexity projects on an organizationally limited system with no development tools. 
 
 ## Disambiguation about units for memory
 

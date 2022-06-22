@@ -1,29 +1,32 @@
 namespace Cercis
 { 
+    using System;
+    using System.IO;
+    using System.Linq;
+
     class Cercis
     { 
         static void Main(string[] args)
         { 
-            if (args.Contains("-h"))
+            if (args.Contains("-h") || args.Contains("--help"))
             {
                 Console.WriteLine(Messages.CommandLine.Help);
                 return;
             }
 
-            ulong depth;
-            string dir;
-            string pre;
-            CommandLineArgs cliArgs;
-            SortType sort; 
-            
-            args = args.ToArray(); 
-            cliArgs = CommandLine.ParseArgs(args); 
-            dir = cliArgs.Directory ?? Directory.GetCurrentDirectory();
-            pre = cliArgs.Prefixes ?? string.Empty;
-            sort = cliArgs.SortType ?? SortType.None;
-            depth = cliArgs.Depth ?? ulong.MaxValue;
+            if (args.Contains("--version"))
+            {
+                throw new NotImplementedException(); 
+            } 
 
-            new FileTree(dir, pre, sort, depth).Display(); 
+            var clargs = CommandLine.ParseArgs(args); 
+
+            new FileTree(
+                clargs.Directory ?? Directory.GetCurrentDirectory(),
+                clargs.Prefixes,
+                clargs.SortType,
+                clargs.Depth)
+                .Display(); 
         } 
     }
 }
