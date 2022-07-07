@@ -2,9 +2,12 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <LangVersion>5</LangVersion>
     <TargetFramework>net6</TargetFramework>
     <ImplicitUsings>disable</ImplicitUsings>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>cercis</ToolCommandName>
+    <PackageOutputPath>./out</PackageOutputPath>
   </PropertyGroup>
 
 </Project>

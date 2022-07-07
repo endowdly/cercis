@@ -5,19 +5,11 @@ namespace Cercis
     using System.IO;
     using System.Linq;
 
-    enum FileType 
-    {
-        None,
-        File,
-        Dir, 
-        SymLink
-    }
-
     enum SortType
     {
         None,
         Ascending,
-        Descending 
+        Descending
     }
 
     class TreeNode
@@ -25,21 +17,16 @@ namespace Cercis
         ulong len;
         readonly string name;
         readonly SortType sortType;
-        Stack<TreeNode> children;
+        public readonly TreeNode[] children;
+
         public readonly ulong gen;
         public readonly string location;
 
-        public TreeNode(
-            string loc,
-            IEnumerable<string> ps,
-            SortType st,
-            ulong n
-        )
-        { 
+        public TreeNode(string loc, IEnumerable<string> ps, SortType st, ulong n)
+        {
             location = loc;
             gen = n;
             sortType = st;
-            children = new Stack<TreeNode>();
 
             if (Directory.Exists(loc))
             {
@@ -47,7 +34,7 @@ namespace Cercis
                 {
                     name = new DirectoryInfo(loc).Name;
 
-                    ConstructBranches(ps);
+                    children = ConstructBranches(ps);
                 }
                 catch (UnauthorizedAccessException)
                 {
@@ -55,130 +42,92 @@ namespace Cercis
                 }
                 catch (IOException ex)
                 {
-                    Console.WriteLine(Messages.TreeNode.UnknownIOException, ex.Source ?? string.Empty);
-                } 
+                    Console.WriteLine(
+                        Messages.TreeNode.UnknownIOException,
+                        ex.Source ?? string.Empty
+                    );
+                }
             }
             else
             {
-                name = new FileInfo(loc).Name;
-                len = IsSymLink(loc)
-                    ? 0ul
-                    : GetFileLength(loc);
-            }
-        }
-        
-        public string Length
-        {
-            get
-            {
-                var unit = Bytes.PrettyUnit(len);
-                var presentLen = Bytes.Convert(len, UnitPrefix.None, unit);
-
-                return unit == UnitPrefix.None
-                    ? string.Format(Formatters.TreeNode.FormatFileLengthNone, presentLen, unit.GetDescription())
-                    : string.Format(Formatters.TreeNode.FormatFileLength, presentLen, unit.GetDescription());
+                name = Path.GetFileName(loc);
+                len = GetFileLength(loc);
             }
         }
 
-        // sprintf_file_name
-        public string Name 
-        {
-            get
-            {
-                return Directory.Exists(location)
-                    ? string.Format(Formatters.TreeNode.FormatFileName, name)
+        public string Length =>
+            string.Format(Formatters.TreeNode.FormatLength, Bytes.Prettify(len));
+        public string Name =>
+            Directory.Exists(location)
+                ? string.Format(Formatters.TreeNode.FormatDirName, name)
+                : IsSymLink(location)
+                    ? string.Format(
+                        Formatters.TreeNode.FormatLinkName,
+                        name,
+                        GetLinkTarget(location)
+                    )
                     : name;
-            }
-        }
 
-        public IEnumerable<TreeNode> EnumerateChildren()
+        TreeNode[] ConstructBranches(IEnumerable<string> ps)
         {
-            foreach (var c in children)
+            var xs = Directory.EnumerateFileSystemEntries(location);
+            var ys = new Stack<TreeNode>();
+
+            foreach (var x in xs)
             {
-                yield return c;
+                if (string.IsNullOrWhiteSpace(x))
+                    continue;
+
+                foreach (var p in ps)
+                {
+                    if (Directory.Exists(x) && new DirectoryInfo(x).Name.StartsWith(p))
+                        goto skip;
+                }
+
+                var y = new TreeNode(x, ps, sortType, gen + 1);
+
+                len += y.len;
+
+                ys.Push(y);
+
+                skip:
+                continue;
             }
-        }
 
-        // sprintf_len
-        static FileType GetFileType(string entry)
-        {
-            if (IsSymLink(entry))
-                return FileType.SymLink;
+            if (sortType == SortType.None)
+                return ys.ToArray();
 
-            return File.Exists(entry)
-                ? FileType.File
-                : Directory.Exists(entry)
-                    ? FileType.Dir
-                    : FileType.None;
+            return sortType == SortType.Ascending
+                ? ys.OrderBy(child => child.len).ToArray()
+                : ys.OrderByDescending(child => child.len).ToArray();
         }
 
         static ulong GetFileLength(string path)
         {
             var fi = new FileInfo(path);
 
-            return fi.Exists
-                ? (ulong) fi.Length
-                : 0ul;
+            return fi.Exists ? (ulong)fi.Length : 0ul;
         }
 
         static bool IsSymLink(string path)
         {
-            return (File.GetAttributes(path) & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint;
+            return (File.GetAttributes(path) & FileAttributes.ReparsePoint)
+                == FileAttributes.ReparsePoint;
         }
 
-        void AddChild(TreeNode child)
-        { 
-            children.Push(child); 
-        }
-
-        void ConstructBranches(IEnumerable<string> ps)
+        static string GetLinkTarget(string path)
         {
-            string fName;
-            FileType fType;
+            if (!File.Exists(path))
+                return string.Empty;
 
-            var fses = Directory.EnumerateFileSystemEntries(location);
-
-            foreach (var fse in fses)
+            try
             {
-                if (string.IsNullOrWhiteSpace(fse))
-                    continue;
-
-                fType = GetFileType(fse);
-
-                if (fType == FileType.None)
-                    continue;
-
-                fName = fType == FileType.Dir
-                    ? new DirectoryInfo(fse).Name
-                    : new FileInfo(fse).Name;
-
-                foreach (var p in ps)
-                {
-                    if (fType == FileType.Dir && fName.StartsWith(p))
-                        goto skip;
-                } 
-
-                var newNode = new TreeNode(fse, ps, sortType, gen + 1);
-
-                len += newNode.len;
-
-                AddChild(newNode);
-
-                skip:
-                    continue;
+                return File.ResolveLinkTarget(path, true).FullName ?? string.Empty;
             }
-
-            if (sortType != SortType.None)
-                SortChildren();
-        }
-
-        void SortChildren()
-        {
-            var xs = sortType == SortType.Ascending
-                ? children.OrderBy(child => child.len)
-                : children.OrderByDescending(child => child.len);
-
-            children = new Stack<TreeNode>(xs);
+            catch (IOException)
+            {
+                return string.Empty;
+            }
         }
     }
 }
