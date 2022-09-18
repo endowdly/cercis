@@ -92,7 +92,7 @@ echo.
 rem Build Resource File first
 if exist res\*.cs (
     for %%f in (.\res\*.cs) do echo  %%~nxf 
-    %toolPath%\csc.exe /t:library /out:.\res\Disker.resource /nologo .\res\*.cs 
+    %toolPath%\csc.exe /t:library /out:.\res\%CurrentDirName%.resource /nologo .\res\*.cs 
 ) 
 
 rem List all source files

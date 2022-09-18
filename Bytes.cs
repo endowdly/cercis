@@ -5,14 +5,38 @@ namespace Cercis
 
     enum UnitPrefix : sbyte
     {
-        None = 3,
-        Kilo = 2,
-        Mega = 1,
-        Giga = 0,
+        None = 0,
+        Kilo = 1,
+        Mega = 2,
+        Giga = 3,
     }
 
     static class Bytes
     { 
+        static UnitPrefix GetPrefix(ulong bytes)
+        {
+            return bytes > 1000000000
+                ? UnitPrefix.Giga
+                : bytes > 1000000
+                    ? UnitPrefix.Mega
+                    : bytes > 1000
+                        ? UnitPrefix.Kilo
+                        : UnitPrefix.None;
+        }
+
+        public static double Convert(ulong n, UnitPrefix from, UnitPrefix to)
+        {
+
+            var steps = from - to;
+
+            if (steps == 0)
+                return n;
+
+            return steps < 0 
+                ? n * Math.Pow(1e3, steps)
+                : n / Math.Pow(1e3, steps); 
+        }
+
         public static string GetDescription(this UnitPrefix x)
         {
             string value;
@@ -26,46 +50,25 @@ namespace Cercis
             };
 
             if (friendlyStrings.TryGetValue(x, out value))
-            {
                 return value;
-            }
 
             return "?";
         }
 
-        public static UnitPrefix PrettyUnit(ulong bytes)
+        public static double ConvertFrom(ulong n)
         {
-            return bytes > 1000000000
-                ? UnitPrefix.Giga
-                : bytes > 1000000
-                    ? UnitPrefix.Mega
-                    : bytes > 1000
-                        ? UnitPrefix.Kilo
-                        : UnitPrefix.None;
+            return Convert(n, UnitPrefix.None, GetPrefix(n)); 
         }
 
-        public static double Convert(ulong n, UnitPrefix from, UnitPrefix to)
+        public static string Prettify(ulong n)
         {
-            double result;
-            double nSteps;
+            var x = GetPrefix(n);
+            var y = ConvertFrom(n);
 
-            nSteps = from - to;
-
-            if (nSteps == 0)
-                return n;
-
-            result = n;
-
-            if (nSteps > 0)
-            {
-                result /= Math.Pow(1000.0, nSteps);
-            }
-            else
-            {
-                result *= Math.Pow(1000.0, Math.Abs(nSteps));
-            }
-
-            return result;
+            return x == UnitPrefix.None
+                ? y.ToString() + Literal.Space + x.GetDescription()
+                : y.ToString("n2") + Literal.Space + x.GetDescription();
         }
-    } 
+    }
+ 
 }

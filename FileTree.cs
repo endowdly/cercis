@@ -1,7 +1,6 @@
 namespace Cercis
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Text;
@@ -22,14 +21,14 @@ namespace Cercis
                 throw new DirectoryNotFoundException(string.Format(Messages.FileTree.NotADir, rootPath));
 
             var ps = string.IsNullOrWhiteSpace(ignoredPrefixes)
-                ? new string[0] 
+                ? Array.Empty<string>()
                 : ignoredPrefixes.Split(Literal.Comma).Select(x => x.Trim());
- 
+
             rootNode = new TreeNode(
                 rootPath,
                 ps,
                 sortType,
-                0); 
+                0);
 
             depth = maxDepth;
         }
@@ -38,53 +37,52 @@ namespace Cercis
         {
             var fmtRow = string.Format(Formatters.FileTree.SprintRow, prefix, node.Name, node.Length);
 
-            sb.Append(fmtRow); 
+            sb.Append(fmtRow);
         }
 
         static void SprintBranches(TreeNode node, string basePrefix, ulong depth, ref StringBuilder sb)
         {
-            if (node.gen >= depth)
+            if (node.Gen >= depth)
                 return;
 
-            if (!node.EnumerateChildren().Any())
-                return;    
+            if (node.Children.Length < 1)
+                return;
 
             string prefix;
             string dirPrefix;
             TreeNode lastChild;
-            IEnumerable<TreeNode> children; 
+            TreeNode[] children;
 
-            if (node.EnumerateChildren().Count() > 1)
+            if (node.Children.Length > 1) 
             {
-                lastChild = node.EnumerateChildren().Last(); 
-                children = node.EnumerateChildren().TakeWhile(child => child != lastChild);
-            }
-            else 
-            {
-                lastChild = node.EnumerateChildren().First();
-                children = new TreeNode[0];
-            } 
+                children = node.Children.Take(node.Children.Length - 1).ToArray();
+                lastChild = node.Children.Last();
 
-            foreach (var child in children)
-            {
-                prefix = string.Format(
-                    Formatters.FileTree.SprintBranchesPrefix,
-                    basePrefix,
-                    Literal.BranchSep
-                );
-
-                SprintRow(child, prefix, ref sb); 
-
-                if (Directory.Exists(child.location))
-                { 
-                    dirPrefix = string.Format(
-                        Formatters.FileTree.SprintBranchesDirPrefix,
+                foreach (var child in children)
+                {
+                    prefix = string.Format(
+                        Formatters.FileTree.SprintBranchesPrefix,
                         basePrefix,
                         Literal.BranchSep
                     );
 
-                    SprintBranches(child, dirPrefix, depth, ref sb);
+                    SprintRow(child, prefix, ref sb);
+
+                    if (Directory.Exists(child.Location))
+                    {
+                        dirPrefix = string.Format(
+                            Formatters.FileTree.SprintBranchesDirPrefix,
+                            basePrefix,
+                            Literal.BranchSep
+                        );
+
+                        SprintBranches(child, dirPrefix, depth, ref sb);
+                    }
                 }
+            }
+            else 
+            {
+                lastChild = node.Children[0];
             }
 
             prefix = string.Format(
@@ -95,7 +93,7 @@ namespace Cercis
 
             SprintRow(lastChild, prefix, ref sb);
 
-            if (Directory.Exists(lastChild.location))
+            if (Directory.Exists(lastChild.Location))
             {
                 dirPrefix = string.Format(
                     Formatters.FileTree.SprintBranchesLastChildDirPrefix,
@@ -104,7 +102,7 @@ namespace Cercis
                 );
 
                 SprintBranches(lastChild, dirPrefix, depth, ref sb);
-            }
+            } 
         }
 
         public void Display()
@@ -112,7 +110,7 @@ namespace Cercis
             var sb = new StringBuilder();
 
             SprintRow(rootNode, string.Empty, ref sb);
-            SprintBranches(rootNode, string.Empty, depth, ref sb); 
+            SprintBranches(rootNode, string.Empty, depth, ref sb);
 
             Console.Write(sb.ToString());
         }
