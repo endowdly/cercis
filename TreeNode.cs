@@ -20,13 +20,14 @@ namespace Cercis
         static readonly IntPtr INVALID_HANDLE_VALUE = new IntPtr(-1);
         const uint FILE_READ_EA = 0x0008;
         const uint FILE_FLAG_BACKUP_SEMANTICS = 0x2000000;
- 
+
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         static extern uint GetFinalPathNameByHandle(
             IntPtr hFile,
             [MarshalAs(UnmanagedType.LPWStr)] StringBuilder lpszFilePath,
             uint cchFilePath,
-            uint dwFlags);
+            uint dwFlags
+        );
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -34,13 +35,14 @@ namespace Cercis
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         static extern IntPtr CreateFile(
-                [MarshalAs(UnmanagedType.LPWStr)] string filename,
-                [MarshalAs(UnmanagedType.U4)] uint access,
-                [MarshalAs(UnmanagedType.U4)] FileShare share,
-                IntPtr securityAttr,
-                [MarshalAs(UnmanagedType.U4)] FileMode creationDisposition,
-                [MarshalAs(UnmanagedType.U4)] uint flags,
-                IntPtr templateFile);
+            [MarshalAs(UnmanagedType.LPWStr)] string filename,
+            [MarshalAs(UnmanagedType.U4)] uint access,
+            [MarshalAs(UnmanagedType.U4)] FileShare share,
+            IntPtr securityAttr,
+            [MarshalAs(UnmanagedType.U4)] FileMode creationDisposition,
+            [MarshalAs(UnmanagedType.U4)] uint flags,
+            IntPtr templateFile
+        );
 
         public static string GetFinalPathName(string path)
         {
@@ -51,7 +53,8 @@ namespace Cercis
                 IntPtr.Zero,
                 FileMode.Open,
                 FILE_FLAG_BACKUP_SEMANTICS,
-                IntPtr.Zero);
+                IntPtr.Zero
+            );
 
             if (h == INVALID_HANDLE_VALUE)
                 throw new Win32Exception();
@@ -83,12 +86,7 @@ namespace Cercis
         public readonly ulong Gen;
         public readonly string Location;
 
-        public TreeNode(
-            string loc,
-            IEnumerable<string> ps,
-            SortType st,
-            ulong n
-        )
+        public TreeNode(string loc, IEnumerable<string> ps, SortType st, ulong n)
         {
             Location = loc;
             Gen = n;
@@ -108,7 +106,10 @@ namespace Cercis
                 }
                 catch (IOException ex)
                 {
-                    Console.WriteLine(Messages.TreeNode.UnknownIOException, ex.Source ?? string.Empty);
+                    Console.WriteLine(
+                        Messages.TreeNode.UnknownIOException,
+                        ex.Source ?? string.Empty
+                    );
                 }
             }
             else
@@ -120,10 +121,7 @@ namespace Cercis
 
         public string Length
         {
-            get
-            {
-                return string.Format(Formatters.TreeNode.FormatLength, Bytes.Prettify(len));
-            }
+            get { return string.Format(Formatters.TreeNode.FormatLength, Bytes.Prettify(len)); }
         }
 
         // sprintf_file_name
@@ -132,7 +130,11 @@ namespace Cercis
             get
             {
                 return IsSymLink(Location)
-                    ? string.Format(Formatters.TreeNode.FormatLinkName, name, GetLinkTarget(Location))
+                    ? string.Format(
+                        Formatters.TreeNode.FormatLinkName,
+                        name,
+                        GetLinkTarget(Location)
+                    )
                     : Directory.Exists(Location)
                         ? string.Format(Formatters.TreeNode.FormatDirName, name)
                         : name;
@@ -161,7 +163,7 @@ namespace Cercis
 
                 ys.Push(y);
 
-            skip:
+                skip:
                 continue;
             }
 
@@ -173,21 +175,17 @@ namespace Cercis
                 : ys.OrderByDescending(child => child.len).ToArray();
         }
 
-
         static ulong GetFileLength(string path)
         {
             var fi = new FileInfo(path);
 
-            return fi.Exists
-                ? (ulong)fi.Length
-                : 0ul;
+            return fi.Exists ? (ulong)fi.Length : 0ul;
         }
-
-
 
         static bool IsSymLink(string path)
         {
-            return (File.GetAttributes(path) & FileAttributes.ReparsePoint) == FileAttributes.ReparsePoint;
+            return (File.GetAttributes(path) & FileAttributes.ReparsePoint)
+                == FileAttributes.ReparsePoint;
         }
 
         static string GetLinkTarget(string path)

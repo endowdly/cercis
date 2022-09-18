@@ -10,37 +10,40 @@ namespace Cercis
         readonly ulong depth;
         readonly TreeNode rootNode;
 
-        public FileTree(
-            string rootPath,
-            string ignoredPrefixes,
-            SortType sortType,
-            ulong maxDepth
-        )
+        public FileTree(string rootPath, string ignoredPrefixes, SortType sortType, ulong maxDepth)
         {
             if (!Directory.Exists(rootPath))
-                throw new DirectoryNotFoundException(string.Format(Messages.FileTree.NotADir, rootPath));
+                throw new DirectoryNotFoundException(
+                    string.Format(Messages.FileTree.NotADir, rootPath)
+                );
 
             var ps = string.IsNullOrWhiteSpace(ignoredPrefixes)
                 ? Array.Empty<string>()
                 : ignoredPrefixes.Split(Literal.Comma).Select(x => x.Trim());
 
-            rootNode = new TreeNode(
-                rootPath,
-                ps,
-                sortType,
-                0);
+            rootNode = new TreeNode(rootPath, ps, sortType, 0);
 
             depth = maxDepth;
         }
 
         static void SprintRow(TreeNode node, string prefix, ref StringBuilder sb)
         {
-            var fmtRow = string.Format(Formatters.FileTree.SprintRow, prefix, node.Name, node.Length);
+            var fmtRow = string.Format(
+                Formatters.FileTree.SprintRow,
+                prefix,
+                node.Name,
+                node.Length
+            );
 
             sb.Append(fmtRow);
         }
 
-        static void SprintBranches(TreeNode node, string basePrefix, ulong depth, ref StringBuilder sb)
+        static void SprintBranches(
+            TreeNode node,
+            string basePrefix,
+            ulong depth,
+            ref StringBuilder sb
+        )
         {
             if (node.Gen >= depth)
                 return;
@@ -53,7 +56,7 @@ namespace Cercis
             TreeNode lastChild;
             TreeNode[] children;
 
-            if (node.Children.Length > 1) 
+            if (node.Children.Length > 1)
             {
                 children = node.Children.Take(node.Children.Length - 1).ToArray();
                 lastChild = node.Children.Last();
@@ -80,7 +83,7 @@ namespace Cercis
                     }
                 }
             }
-            else 
+            else
             {
                 lastChild = node.Children[0];
             }
@@ -102,7 +105,7 @@ namespace Cercis
                 );
 
                 SprintBranches(lastChild, dirPrefix, depth, ref sb);
-            } 
+            }
         }
 
         public void Display()

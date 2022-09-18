@@ -42,24 +42,26 @@ namespace Cercis
                 case "-p":
                     state.Mode = CommandLineMode.Patterns;
                     break;
-                    
+
                 case "--sort":
                 case "-s":
                     state.Options.SortType = SortType.Ascending;
                     break;
-                    
+
                 case "--sort-descending":
                 case "-S":
                     state.Options.SortType = SortType.Descending;
                     break;
-                    
+
                 default:
                     if (!state.CanSetDir)
-                        throw new ArgumentException(string.Format("{0} is not a valid option", arg));
-                        
+                        throw new ArgumentException(
+                            string.Format("{0} is not a valid option", arg)
+                        );
+
                     state.Options.Directory = GetDirectoryFromArg(arg);
-                    state.CanSetDir = false; 
-                    break;     
+                    state.CanSetDir = false;
+                    break;
             }
         }
 
@@ -142,10 +144,10 @@ namespace Cercis
 
             return Path.GetDirectoryName(arg);
         }
-        
+
         static void ValidateArg(string arg)
         {
-            string[] strings = 
+            string[] strings =
             {
                 "-s",
                 "-S",

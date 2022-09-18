@@ -12,7 +12,7 @@ namespace Cercis
     }
 
     static class Bytes
-    { 
+    {
         static UnitPrefix GetPrefix(ulong bytes)
         {
             return bytes > 1000000000
@@ -26,21 +26,18 @@ namespace Cercis
 
         public static double Convert(ulong n, UnitPrefix from, UnitPrefix to)
         {
-
             var steps = from - to;
 
             if (steps == 0)
                 return n;
 
-            return steps < 0 
-                ? n * Math.Pow(1e3, steps)
-                : n / Math.Pow(1e3, steps); 
+            return steps < 0 ? n * Math.Pow(1e3, steps) : n / Math.Pow(1e3, steps);
         }
 
         public static string GetDescription(this UnitPrefix x)
         {
             string value;
-            
+
             var friendlyStrings = new Dictionary<UnitPrefix, string>
             {
                 { UnitPrefix.Kilo, "KB" },
@@ -57,7 +54,7 @@ namespace Cercis
 
         public static double ConvertFrom(ulong n)
         {
-            return Convert(n, UnitPrefix.None, GetPrefix(n)); 
+            return Convert(n, UnitPrefix.None, GetPrefix(n));
         }
 
         public static string Prettify(ulong n)
@@ -70,5 +67,4 @@ namespace Cercis
                 : y.ToString("n2") + Literal.Space + x.GetDescription();
         }
     }
- 
 }
