@@ -1,7 +1,6 @@
 namespace Cercis
 {
     using System;
-    using System.Collections.Generic;
 
     enum UnitPrefix : sbyte
     {
@@ -14,7 +13,7 @@ namespace Cercis
     static class Bytes
     {
         static UnitPrefix GetPrefix(ulong bytes)
-        {
+        { 
             return bytes > 1000000000
                 ? UnitPrefix.Giga
                 : bytes > 1000000
@@ -36,20 +35,15 @@ namespace Cercis
 
         public static string GetDescription(this UnitPrefix x)
         {
-            string value;
-
-            var friendlyStrings = new Dictionary<UnitPrefix, string>
+            string[] fStrings =
             {
-                { UnitPrefix.Kilo, "KB" },
-                { UnitPrefix.Mega, "MB" },
-                { UnitPrefix.Giga, "GB" },
-                { UnitPrefix.None, "B" },
+                "B",
+                "KB",
+                "MB",
+                "GB",
             };
 
-            if (friendlyStrings.TryGetValue(x, out value))
-                return value;
-
-            return "?";
+            return fStrings[(int)x]; 
         }
 
         public static double ConvertFrom(ulong n)
