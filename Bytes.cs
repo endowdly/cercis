@@ -33,20 +33,15 @@ static class Bytes
 
     public static string GetDescription(this UnitPrefix x)
     {
-        var friendlyStrings = new Dictionary<UnitPrefix, string>
+        string[] fString = 
         {
-            { UnitPrefix.Kilo, "KB" },
-            { UnitPrefix.Mega, "MB" },
-            { UnitPrefix.Giga, "GB" },
-            { UnitPrefix.None, "B" },
+            "B",
+            "KB",
+            "MB",
+            "GB",
         };
 
-        if (friendlyStrings.TryGetValue(x, out string value))
-        {
-            return value;
-        }
-
-        return "?";
+        return fString[(int)x];
     }
 
     public static double ConvertFrom(ulong n)
