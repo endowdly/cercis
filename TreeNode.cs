@@ -12,24 +12,22 @@ class TreeNode
     ulong len;
     readonly string name;
     readonly SortType sortType;
-    public readonly TreeNode[] children;
-
-    public readonly ulong gen;
-    public readonly string location;
+    public readonly TreeNode[] Children; 
+    public readonly ulong Gen;
+    public readonly string Location;
 
     public TreeNode(string loc, IEnumerable<string> ps, SortType st, ulong n)
     {
-        location = loc;
-        gen = n;
         sortType = st;
+        Location = loc;
+        Gen = n;
 
         if (Directory.Exists(loc))
         {
             try
             {
-                name = new DirectoryInfo(loc).Name;
-
-                children = ConstructBranches(ps);
+                name = new DirectoryInfo(loc).Name; 
+                Children = ConstructBranches(ps);
             }
             catch (UnauthorizedAccessException)
             {
@@ -48,17 +46,26 @@ class TreeNode
     }
 
     public string Length => string.Format(Formatters.TreeNode.FormatLength, Bytes.Prettify(len));
+    public bool IsSymLink => File.GetAttributes(Location).HasFlag(FileAttributes.ReparsePoint);
     public string Name =>
-        IsSymLink(location)
-            ? string.Format(Formatters.TreeNode.FormatLinkName, name, GetLinkTarget(location))
-            : Directory.Exists(location)
+        IsSymLink
+            ? string.Format(Formatters.TreeNode.FormatLinkName, name, GetLinkTarget(Location))
+            : Directory.Exists(Location)
                 ? string.Format(Formatters.TreeNode.FormatDirName, name)
                 : name;
 
     TreeNode[] ConstructBranches(IEnumerable<string> ps)
     {
-        var xs = Directory.EnumerateFileSystemEntries(location);
-        var ys = new Stack<TreeNode>();
+        // Do not try to traverse Junctions or SymLinks
+        if (IsSymLink)
+        {
+            len = 0ul;
+            
+            return Array.Empty<TreeNode>();
+        }
+
+        var xs = Directory.EnumerateFileSystemEntries(Location);
+        var ys = new Stack<TreeNode>(xs.Count());
 
         foreach (var x in xs)
         {
@@ -71,7 +78,7 @@ class TreeNode
                     goto skip;
             }
 
-            var y = new TreeNode(x, ps, sortType, gen + 1);
+            var y = new TreeNode(x, ps, sortType, Gen + 1);
 
             len += y.len;
 
@@ -96,21 +103,18 @@ class TreeNode
         return fi.Exists ? (ulong)fi.Length : 0ul;
     }
 
-    static bool IsSymLink(string path)
-    {
-        return (File.GetAttributes(path) & FileAttributes.ReparsePoint)
-            == FileAttributes.ReparsePoint;
-    }
-
     static string GetLinkTarget(string path)
     {
         try
         {
-            return File.Exists(path)
-                ? File.ResolveLinkTarget(path, true).FullName ?? string.Empty
-                : Directory.Exists(path)
-                    ? Directory.ResolveLinkTarget(path, true).FullName ?? string.Empty
-                    : string.Empty;
+            if (File.Exists(path))
+            {
+                return File.ResolveLinkTarget(path, true).FullName ?? string.Empty;
+            }
+            
+            return Directory.Exists(path)
+                ? Directory.ResolveLinkTarget(path, true).FullName ?? string.Empty
+                : string.Empty; 
         }
         catch (IOException)
         {

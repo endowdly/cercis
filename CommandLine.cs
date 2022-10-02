@@ -38,6 +38,13 @@ static class CommandLine
                 state.Mode = CommandLineMode.Patterns;
                 break;
 
+            case "--no-ignore"
+            or "-P"
+            or "--force"
+            or "-f":
+                state.Options.Prefixes = string.Empty;
+                break;
+
             case "--sort"
             or "-s":
                 state.Options.SortType = SortType.Ascending;
@@ -80,7 +87,7 @@ static class CommandLine
         {
             Directory = null,
             Depth = ulong.MaxValue,
-            Prefixes = string.Empty,
+            Prefixes = Literal.Period,
             SortType = SortType.None
         };
 

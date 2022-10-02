@@ -27,6 +27,9 @@ class FileTree
     {
         var fmtRow = string.Format(Formatters.FileTree.SprintRow, prefix, node.Name, node.Length);
 
+        if (fmtRow.Length + sb.Length > sb.MaxCapacity)
+            return;
+
         sb.Append(fmtRow);
     }
 
@@ -37,16 +40,16 @@ class FileTree
         TreeNode[] children;
         TreeNode lastChild;
 
-        if (node.gen >= depth)
+        if (node.Gen >= depth)
             return;
 
-        if (node.children.Length < 1)
+        if (node.Children.Length < 1)
             return;
 
-        if (node.children.Length > 1)
+        if (node.Children.Length > 1)
         {
-            children = node.children[0..^2];
-            lastChild = node.children[^1];
+            children = node.Children[0..^2];
+            lastChild = node.Children[^1];
 
             foreach (var child in children)
             {
@@ -58,7 +61,7 @@ class FileTree
 
                 SprintRow(child, prefix, ref sb);
 
-                if (Directory.Exists(child.location))
+                if (Directory.Exists(child.Location))
                 {
                     dirPrefix = string.Format(
                         Formatters.FileTree.SprintBranchesDirPrefix,
@@ -72,7 +75,7 @@ class FileTree
         }
         else
         {
-            lastChild = node.children[0];
+            lastChild = node.Children[0];
         }
 
         prefix = string.Format(
@@ -83,7 +86,7 @@ class FileTree
 
         SprintRow(lastChild, prefix, ref sb);
 
-        if (Directory.Exists(lastChild.location))
+        if (Directory.Exists(lastChild.Location))
         {
             dirPrefix = string.Format(
                 Formatters.FileTree.SprintBranchesLastChildDirPrefix,

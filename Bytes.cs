@@ -1,5 +1,7 @@
 namespace Cercis;
 
+using static System.Math;
+
 enum UnitPrefix : sbyte
 {
     None = 0,
@@ -10,30 +12,27 @@ enum UnitPrefix : sbyte
 
 static class Bytes
 {
-    static UnitPrefix GetPrefix(ulong n)
+    static UnitPrefix GetPrefix(ulong n) => n switch
     {
-        return n > 1000000000
-            ? UnitPrefix.Giga
-            : n > 1000000
-                ? UnitPrefix.Mega
-                : n > 1000
-                    ? UnitPrefix.Kilo
-                    : UnitPrefix.None;
-    }
+        >= 1_000_000_000 => UnitPrefix.Giga,
+        >= 1_000_000 => UnitPrefix.Mega,
+        >= 1_000 => UnitPrefix.Kilo,
+        _ => UnitPrefix.None,
+    };
 
     static double Convert(ulong n, UnitPrefix from, UnitPrefix to)
-    {
-        var steps = from - to;
+    { 
+        var steps= from - to;
 
         if (steps == 0)
             return n;
 
-        return steps < 0 ? n * Math.Pow(1e3, steps) : n / Math.Pow(1e3, steps);
+        return steps < 0 ? n * Pow(1000.0, steps) : n * Pow(1000.0, -steps);
     }
 
-    public static string GetDescription(this UnitPrefix x)
+    public static string GetDescription(UnitPrefix x)
     {
-        string[] fString = 
+        string[] fString =
         {
             "B",
             "KB",
@@ -44,10 +43,7 @@ static class Bytes
         return fString[(int)x];
     }
 
-    public static double ConvertFrom(ulong n)
-    {
-        return Convert(n, UnitPrefix.None, GetPrefix(n));
-    }
+    public static double ConvertFrom(ulong n) => Convert(n, UnitPrefix.None, GetPrefix(n));
 
     public static string Prettify(ulong n)
     {
@@ -55,7 +51,7 @@ static class Bytes
         var y = ConvertFrom(n);
 
         return x == UnitPrefix.None
-            ? y.ToString() + Literal.Space + x.GetDescription()
-            : y.ToString("n2") + Literal.Space + x.GetDescription();
+            ? y.ToString() + Literal.Space + "B"
+            : y.ToString("n2") + Literal.Space + GetDescription(x);
     }
 }

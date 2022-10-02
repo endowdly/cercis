@@ -13,15 +13,18 @@ with their memory sizes adjacent.
 Usage:
     cercis [directory] [options]
 
-ARGUMENTS:
-    directory     Directory to traverse. Defaults to current working directory.
+Directory:
+    Directory to traverse. Defaults to current working directory.
 
-OPTIONS:
-    -l            Unsigned integer indicating many nested directory levels to display. Defaults to all.
-    -p            Comma-separated list of prefixes. Directories containing any of
-                  these prefixes will not be traversed. Their memory size will also be ignored.
-    -s [asc|desc] Sort tree by memory-size. 
-    -h            Displays help prompt.
+Options:
+    -d, --depth            Unsigned integer indicating how any nested directory levels to display. Defaults to all.
+    -p, --ignore-patterns  Comma-separated list of prefixes. Directories containing any of
+                           these prefixes will not be traversed. Their memory size will be ignored.
+    -P, --no-ignore        Do not ignore any directories.
+    -s, --sort             Sort tree by memory-size ascending.
+    -S, --sort-descending  Sort tree by memory-size descending.
+    -h, --help             Displays help prompt.
+
 ```
 
 ## Installation
@@ -37,13 +40,15 @@ It has no dependencies, so, it should be quick.
 
 You can then run `dotnet run`.
 
-### Toolless
+### Windows Toolless Build
 
-If you are running a Windows 10 machine and don't want to use `dotnet`, then simply clone this repo and run the `build.cmd` file.
+If you are running a Windows 10 machine and don't want to use `dotnet`, then `git clone https://github.com/endowdly/cercis/tree/oldschool` and run the `build.cmd` file.
 An executable binary will compile to `out`, which you can then manually add to your path.
 
 Every Windows 10 build comes with its own csharp compiler. 
-This project packages an old script w/response file setup I used to build medium-complexity projects on an organizationally limited system with no development tools. 
+The `old-school` branch packages an old script w/response file setup I used to build medium-complexity projects on an organizationally limited system with no development tools. 
+
+It may not be as performant as this branch due to sketchy native kernel calls and lack of optimization.
 
 ## Disambiguation about units for memory
 
@@ -62,6 +67,9 @@ As such, I included the original MIT license instead of my usual preference Unli
 If you fork this repo, be sure to do the same and credit the original coder.
 This is not enough of a derivative, in my opinion.
 
+Although, as I work on bugs and make improvements, the code is drifiting from the original implementation. 
+It could be a fork soon.
+
 _Q: What the hell is a Cercis anyway?_
 
 Erdtree is an homage to Elden Ring.
@@ -70,9 +78,7 @@ To me, their appearance is similar to the Erdtree, albeit tiny, non-luminous ver
 
 _Q: Cercis hangs when I call it on some folders?_
 
-A: Yeah I ported this over in like 2 hours and this hasn't been tested much.
-I am aware of unhandled FileAccess issue that may cause a hang and I'm "tracking" down _which_, but it's not a priority.
-On very large folders (1 GB or larger), you'll see it takes bunch of time for it to output.
+A: I fixed this. It was a reparse point traversal issue.
 
 _Q: Why did you make this? It's totally, TOTALLY unnecessary._
 
@@ -91,3 +97,8 @@ Or I may want to rewrite this in C.
 _Q: How do you know that this is blazingly slow?_
 
 It's not written in Rust.
+
+Seriously though, _cercis is kind of fast_. 
+It's a least comparable to `tree.com`, which doesn't even get size information.
+
+![Not a Benchmark](assets/cercis-not-a-benchmark.png)
