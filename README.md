@@ -7,6 +7,12 @@ with their memory sizes adjacent.
 
 ![Cercis Screenshot](assets/cercis-screenshot.png)
 
+## Installation
+
+```powershell
+dotnet tool install --global endowdly.cercis --version 0.1.0 
+```
+
 ## Usage
 
 ```text
@@ -27,18 +33,13 @@ Options:
 
 ```
 
-## Installation
-
-There is none yet.
-This is lame, remember?
-
 ## Build
 
 Snag a dotnet SDK, version 6.0.23 or higher.
 Clone this repo and run `dotnet build`.
 It has no dependencies, so, it should be quick.
 
-You can then run `dotnet run`.
+You can then `dotnet run`.
 
 ### Windows Toolless Build
 
@@ -78,7 +79,7 @@ To me, their appearance is similar to the Erdtree, albeit tiny, non-luminous ver
 
 _Q: Cercis hangs when I call it on some folders?_
 
-A: I fixed this. It was a reparse point traversal issue.
+I fixed this. It was a reparse point traversal issue.
 
 _Q: Why did you make this? It's totally, TOTALLY unnecessary._
 
@@ -94,11 +95,16 @@ And you don't need Rust.
 Though you might want to get Rust.
 Or I may want to rewrite this in C.
 
+_Q: Is it cross-platform?_
+
+Yes.
+The `main` branch is packed with .NET 6 (7 soon) and works wherever .NET 6 does (Win/Linux/macOS).
+
 _Q: How do you know that this is blazingly slow?_
 
 It's not written in Rust.
 
-Seriously though, _cercis is kind of fast_. 
+But, in all seriousness, _cercis is kind of fast_. 
 It's a least comparable to `tree.com`, which doesn't even get size information.
 
 ![Not a Benchmark](assets/cercis-not-a-benchmark.png)
